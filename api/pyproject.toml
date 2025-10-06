@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "laburen-api"
+version = "0.1.0"
+description = "Fase práctica — API + Postgres + agente ejecutable"
+authors = ["Luca R. & ChatGPT"]
+readme = "README.md"
+packages = [{ include = "app" }]
+
+[tool.poetry.dependencies]
+python = "^3.11"
+fastapi = "^0.115.0"
+uvicorn = {extras = ["standard"], version="^0.30.0"}
+pydantic = "^2.8.0"
+SQLAlchemy = "^2.0.32"
+psycopg2-binary = "^2.9.9"
+python-dotenv = "^1.0.1"
+pandas = "^2.2.2"
+openpyxl = "^3.1.5"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.3.2"
+httpx = "^0.27.0"
+black = "^24.8.0"
+ruff = "^0.6.5"

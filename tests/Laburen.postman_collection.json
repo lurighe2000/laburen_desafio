@@ -1,0 +1,185 @@
+{
+  "info": {
+    "name": "Laburen API",
+    "_postman_id": "c7a6a1e9-4c3e-4b9f-93a7-2d7eb9b3a222",
+    "description": "Fase pr\u00e1ctica \u2014 API + Postgres + tests (Products, Carts)",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{base_url}}/health"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status 200', () => pm.response.code === 200);",
+              "pm.test('has status ok', () => pm.response.json().status === 'ok');"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Products \u2014 list",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{base_url}}/products"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status 200', () => pm.response.code === 200);",
+              "const arr = pm.response.json();",
+              "pm.test('has at least 1 product', () => Array.isArray(arr) && arr.length > 0);",
+              "// save first two ids",
+              "pm.environment.set('pid1', arr[0].id);",
+              "if (arr.length > 1) pm.environment.set('pid2', arr[1].id);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Products \u2014 detail (pid1)",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{base_url}}/products/{{pid1}}"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status 200', () => pm.response.code === 200);",
+              "const p = pm.response.json();",
+              "pm.test('has id/name/price/stock', () => p.id && p.name && typeof p.price === 'number' && typeof p.stock === 'number');"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Products \u2014 404",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{base_url}}/products/999999"
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status 404', () => pm.response.code === 404);",
+              "pm.test('has detail message', () => pm.response.json().detail);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Carts \u2014 create",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/carts",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"items\":[{\"product_id\": {{pid1}}, \"qty\": 1}, {{#pid2}}{\"product_id\": {{pid2}}, \"qty\": 1}{{/pid2}}]}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status 201', () => pm.response.code === 201);",
+              "const cart = pm.response.json();",
+              "pm.environment.set('cart_id', cart.id);",
+              "pm.test('has items', () => Array.isArray(cart.items) && cart.items.length >= 1);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Carts \u2014 patch (qty=3 for pid1; delete pid2)",
+      "request": {
+        "method": "PATCH",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/carts/{{cart_id}}",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"items\":[{\"product_id\": {{pid1}}, \"qty\": 3}, {{#pid2}}{\"product_id\": {{pid2}}, \"qty\": 0}{{/pid2}}]}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status 200', () => pm.response.code === 200);",
+              "const cart = pm.response.json();",
+              "pm.test('has id', () => !!cart.id);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Carts \u2014 404 on bad product",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "url": "{{base_url}}/carts",
+        "body": {
+          "mode": "raw",
+          "raw": "{\"items\":[{\"product_id\": 999999, \"qty\": 1}]}"
+        }
+      },
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "pm.test('status 404', () => pm.response.code === 404);",
+              "pm.test('has detail message', () => pm.response.json().detail);"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ]
+    }
+  ]
+}
