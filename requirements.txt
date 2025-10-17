@@ -1,0 +1,4 @@
+# Minimal requirements for Render deployment
+Flask
+gunicorn
+requests

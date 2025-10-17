@@ -1,0 +1,17 @@
+services:
+  - type: web
+    name: laburen-agent-wa
+    env: python
+    plan: free
+    region: oregon
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn -w 2 -k gthread -t 120 -b 0.0.0.0:$PORT app.whatsapp_server:app
+    envVars:
+      - key: WHATSAPP_VERIFY_TOKEN
+        sync: false
+      - key: WHATSAPP_TOKEN
+        sync: false
+      - key: WHATSAPP_PHONE_NUMBER_ID
+        sync: false
+    healthCheckPath: /health
+    autoDeploy: true

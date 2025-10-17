@@ -3,12 +3,14 @@ import os
 from flask import Flask, request, jsonify
 import requests
 from app.agent.shopping_agent import ShoppingAgent
+import json
 
 app = Flask(__name__)
 
-VERIFY_TOKEN = os.environ.get("WHATSAPP_VERIFY_TOKEN", "verify_token_demo")
-WHATSAPP_TOKEN = os.environ.get("WHATSAPP_TOKEN")  # token de Meta Cloud API
-PHONE_NUMBER_ID = os.environ.get("WHATSAPP_PHONE_NUMBER_ID")  # id del número de test
+# Deben venir por variables de entorno. Fallback SOLO para VERIFY_TOKEN.
+VERIFY_TOKEN = os.environ.get("WHATSAPP_VERIFY_TOKEN", "laburen2025")
+WHATSAPP_TOKEN = os.environ.get("WHATSAPP_TOKEN")
+PHONE_NUMBER_ID = os.environ.get("WHATSAPP_PHONE_NUMBER_ID")  # ej: "801551269711659"
 
 def send_whatsapp_text(to: str, body: str):
     if not (WHATSAPP_TOKEN and PHONE_NUMBER_ID):
@@ -24,16 +26,17 @@ def send_whatsapp_text(to: str, body: str):
     r = requests.post(url, headers=headers, json=payload, timeout=15)
     r.raise_for_status()
 
-@app.route("/webhook", methods=["GET"])
+@app.route("/wa/webhook", methods=["GET"])
 def verify():
     mode = request.args.get("hub.mode")
     token = request.args.get("hub.verify_token")
     challenge = request.args.get("hub.challenge")
     if mode == "subscribe" and token == VERIFY_TOKEN:
+        print("✅ WEBHOOK_VERIFIED")
         return challenge, 200
     return "error", 403
 
-@app.route("/webhook", methods=["POST"])
+@app.route("/wa/webhook", methods=["POST"])
 def incoming():
     data = request.get_json(force=True, silent=True) or {}
     try:
@@ -53,5 +56,28 @@ def incoming():
     return jsonify(status="ok"), 200
 
 if __name__ == "__main__":
-    # Por defecto en 0.0.0.0:8080 para exponer con ngrok
     app.run(host="0.0.0.0", port=int(os.environ.get("PORT", "8080")))
+
+
+# --- healthcheck (Render lo usa para saber si está vivo) ---
+@app.route("/health", methods=["GET"])
+def health():
+    return jsonify(status="ok"), 200
+
+# --- logueo claro del POST entrante ---
+@app.route("/wa/webhook", methods=["POST"])
+def incoming():
+    data = request.get_json(force=True, silent=True) or {}
+    print("\n=== WEBHOOK IN ===")
+    try:
+        print(json.dumps(data, indent=2, ensure_ascii=False))
+    except Exception:
+        print(str(data))
+    print("=== /WEBHOOK IN ===\n")
+    # ... (tu código de parseo/respuesta como ya lo tenés)
+    try:
+        # (tu lógica actual)
+        ...
+    except Exception as e:
+        print("Webhook error:", e)
+    return jsonify(status="ok"), 200
